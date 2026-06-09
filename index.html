@@ -4,7 +4,38 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Survey Dashboard – Power Bank Machine</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+<script>
+// Multi-CDN loader untuk library docx - otomatis fallback jika satu CDN gagal
+(function(){
+  var CDNS = [
+    "https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js",
+    "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js",
+    "https://unpkg.com/docx@8.5.0/build/index.umd.js"
+  ];
+  var idx = 0;
+  function tryLoad(){
+    if(idx >= CDNS.length){ 
+      window._docxLoadFailed = true;
+      console.error("Semua CDN docx gagal dimuat.");
+      return; 
+    }
+    var s = document.createElement("script");
+    s.src = CDNS[idx];
+    s.onload = function(){ 
+      window._docxLoadFailed = false;
+      console.log("docx berhasil load dari:", CDNS[idx]);
+    };
+    s.onerror = function(){ 
+      console.warn("Gagal load dari:", CDNS[idx]); 
+      idx++; 
+      tryLoad(); 
+    };
+    document.head.appendChild(s);
+    idx++;
+  }
+  tryLoad();
+})();
+</script>
 <style>
   :root {
     --bg:#F0F4FA;--surface:#FFFFFF;--surface2:#F7F9FC;--border:#DDE3EF;
@@ -367,11 +398,6 @@ function init(){
   buildAssessTable("placementTable",PLACEMENT_CRITERIA,placementState);
   updateCounters();
   document.getElementById("scriptTemplate").value=getAppsScriptTemplate();
-
-  // Check if docx library loaded
-  if(typeof docx==="undefined"){
-    showToast("⚠ Library docx belum load. Coba refresh halaman.","error",5000);
-  }
 }
 
 function addMachineRow(){
@@ -557,14 +583,47 @@ function doGet(e) {
 // WORD EXPORT - FIXED
 // =====================
 async function exportToWord(){
-  // Check library
-  if(typeof docx==="undefined"){
-    showToast("❌ Library docx belum siap. Refresh halaman dan coba lagi.","error",5000);
-    return;
-  }
-
   const btn=document.getElementById("exportBtn");
   btn.disabled=true;
+  btn.innerHTML="⏳ Memuat library...";
+
+  // Tunggu library docx siap (max 15 detik, cek tiap 300ms)
+  const docxReady = await new Promise((resolve)=>{
+    if(typeof docx !== "undefined"){ resolve(true); return; }
+    let waited = 0;
+    const iv = setInterval(()=>{
+      waited += 300;
+      if(typeof docx !== "undefined"){ clearInterval(iv); resolve(true); return; }
+      if(waited >= 15000){ clearInterval(iv); resolve(false); }
+    }, 300);
+  });
+
+  if(!docxReady){
+    // Coba load ulang secara manual
+    showToast("⏳ Mencoba load ulang library...","info",3000);
+    await new Promise((resolve, reject)=>{
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js";
+      s.onload = resolve;
+      s.onerror = ()=>{
+        var s2 = document.createElement("script");
+        s2.src = "https://unpkg.com/docx@8.5.0/build/index.umd.js";
+        s2.onload = resolve;
+        s2.onerror = reject;
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(s);
+    }).catch(()=>null);
+
+    // Tunggu lagi 3 detik
+    await new Promise(r=>setTimeout(r,3000));
+    if(typeof docx === "undefined"){
+      showToast("❌ Gagal load library. Pastikan koneksi internet aktif lalu refresh halaman.","error",7000);
+      btn.disabled=false; btn.innerHTML="📄 Save as Word Document";
+      return;
+    }
+  }
+
   btn.innerHTML="⏳ Generating...";
 
   try{
