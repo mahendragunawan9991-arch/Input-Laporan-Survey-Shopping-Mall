@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Survey Dashboard – Power Bank Machine</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+<style>
+  :root {
+    --bg:#F0F4FA;--surface:#FFFFFF;--surface2:#F7F9FC;--border:#DDE3EF;
+    --accent:#1A56DB;--accent-light:#EBF0FF;--accent2:#0EA5E9;
+    --success:#16A34A;--danger:#DC2626;--text:#111827;--text2:#4B5563;--text3:#9CA3AF;
+    --radius:10px;--shadow:0 2px 12px rgba(26,86,219,0.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+  .topbar{background:linear-gradient(135deg,#1A56DB 0%,#0EA5E9 100%);padding:18px 32px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 16px rgba(26,86,219,0.2);}
+  .topbar-icon{width:40px;height:40px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .topbar h1{color:#fff;font-size:17px;font-weight:700;}
+  .topbar p{color:rgba(255,255,255,0.75);font-size:12px;margin-top:2px;}
+  .container{max-width:960px;margin:0 auto;padding:28px 20px 60px;}
+  .section-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden;}
+  .section-header{display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--accent-light);border-bottom:1px solid var(--border);}
+  .section-num{width:24px;height:24px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+  .section-header h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);}
+  .section-body{padding:18px 20px;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-grid.cols-1{grid-template-columns:1fr;}
+  .form-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+  .field-group{display:flex;flex-direction:column;gap:5px;}
+  .field-group.full{grid-column:1/-1;}
+  label{font-size:12px;font-weight:600;color:var(--text2);}
+  label .req{color:var(--danger);margin-left:2px;}
+  input[type="text"],input[type="tel"],input[type="date"],input[type="time"],input[type="number"],textarea,select{
+    border:1.5px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;font-family:inherit;
+    color:var(--text);background:#fff;transition:border-color 0.15s,box-shadow 0.15s;width:100%;
+  }
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,86,219,0.1);}
+  textarea{resize:vertical;min-height:80px;}
+  .category-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px;margin-top:6px;}
+  .cat-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;border:1.5px solid var(--border);cursor:pointer;transition:background 0.1s,border-color 0.1s;font-size:12px;}
+  .cat-item:hover{background:var(--accent-light);border-color:var(--accent);}
+  .cat-item.selected{background:var(--accent-light);border-color:var(--accent);color:var(--accent);font-weight:600;}
+  .cat-item input[type="checkbox"]{accent-color:var(--accent);width:14px;height:14px;}
+  .days-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+  .day-chip{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:20px;border:1.5px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;transition:all 0.12s;user-select:none;}
+  .day-chip:hover{border-color:var(--accent);background:var(--accent-light);}
+  .day-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .assess-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .assess-table th{background:var(--surface2);padding:8px 12px;text-align:left;font-weight:700;border-bottom:2px solid var(--border);color:var(--text2);font-size:11px;text-transform:uppercase;}
+  .assess-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .assess-table tr:last-child td{border-bottom:none;}
+  .assess-table .criteria-desc{color:var(--text2);font-size:12px;}
+  .status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all 0.12s;}
+  .status-badge.met{background:#DCFCE7;color:#166534;border-color:#86EFAC;}
+  .status-badge.not-met{background:#FEE2E2;color:#991B1B;border-color:#FCA5A5;}
+  .status-badge.na{background:var(--surface2);color:var(--text3);border-color:var(--border);}
+  /* Machine table */
+  .machine-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .machine-table th{background:var(--surface2);padding:9px 12px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text2);border-bottom:2px solid var(--border);}
+  .machine-table td{padding:8px 10px;border-bottom:1px solid var(--border);}
+  .machine-table tr:last-child td{border-bottom:none;}
+  .size-select{border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12px;font-weight:600;cursor:pointer;width:110px;background:#fff;}
+  .add-row-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--accent-light);color:var(--accent);border:1.5px solid var(--accent);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;transition:all 0.12s;}
+  .add-row-btn:hover{background:var(--accent);color:#fff;}
+  .del-row-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:2px 6px;border-radius:5px;transition:all 0.1s;}
+  .del-row-btn:hover{background:#FEE2E2;color:var(--danger);}
+  /* Photo upload */
+  .photo-upload-area{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--surface2);position:relative;}
+  .photo-upload-area:hover,.photo-upload-area.drag-over{border-color:var(--accent);background:var(--accent-light);}
+  .photo-upload-area input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .photo-upload-area .upload-icon{font-size:32px;margin-bottom:8px;}
+  .photo-upload-area p{font-size:13px;color:var(--text2);}
+  .photo-upload-area span{font-size:11px;color:var(--text3);}
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:12px;}
+  .photo-item{position:relative;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);}
+  .photo-item img{width:100%;height:120px;object-fit:cover;display:block;}
+  .photo-item .photo-caption{padding:6px;background:#fff;}
+  .photo-item .photo-caption input{border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:11px;width:100%;}
+  .photo-item .photo-del{position:absolute;top:4px;right:4px;background:rgba(220,38,38,0.9);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  /* Signature preview */
+  .sig-preview{margin-top:10px;padding:12px 16px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;display:none;}
+  .sig-preview.visible{display:block;}
+  .sig-name-display{font-family:'Georgia',serif;font-size:24px;color:#1A3A7A;font-style:italic;letter-spacing:1px;}
+  .sig-underline{border-top:1.5px solid #333;margin-top:6px;margin-bottom:4px;width:200px;}
+  .sig-label{font-size:11px;color:var(--text2);}
+  /* Google Sheets config */
+  .gs-config{background:linear-gradient(135deg,#e8f5e9 0%,#f1f8e9 100%);border:1.5px solid #A5D6A7;border-radius:10px;padding:16px;margin-bottom:16px;}
+  .gs-config h3{font-size:13px;font-weight:700;color:#1B5E20;display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+  .gs-config p{font-size:12px;color:#2E7D32;margin-bottom:10px;line-height:1.6;}
+  .gs-config a{color:var(--accent);cursor:pointer;}
+  .gs-status{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;}
+  .gs-status.connected{background:#DCFCE7;color:#166534;}
+  .gs-status.not-set{background:#FEF3C7;color:#92400E;}
+  /* Result */
+  .result-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .result-card{padding:14px 16px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);text-align:center;}
+  .result-card .val{font-size:28px;font-weight:800;color:var(--accent);line-height:1;}
+  .result-card .lbl{font-size:11px;color:var(--text2);margin-top:4px;}
+  .result-select{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+  .result-opt{padding:8px 16px;border-radius:20px;border:1.5px solid var(--border);cursor:pointer;font-size:12px;font-weight:600;transition:all 0.12s;}
+  .result-opt.approve{background:#DCFCE7;color:#166534;border-color:#86EFAC;}
+  .result-opt.reject{background:#FEE2E2;color:#991B1B;border-color:#FCA5A5;}
+  .result-opt.on-hold{background:#FEF3C7;color:#92400E;border-color:#FDE68A;}
+  .result-opt.selected{box-shadow:0 0 0 3px rgba(26,86,219,0.2);transform:scale(1.03);}
+  /* Buttons */
+  .actions-bar{display:flex;gap:12px;justify-content:flex-end;padding:20px 0;flex-wrap:wrap;}
+  .btn{display:flex;align-items:center;gap:8px;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all 0.15s;font-family:inherit;}
+  .btn-secondary{background:var(--surface);color:var(--text2);border:1.5px solid var(--border);}
+  .btn-secondary:hover{background:var(--surface2);border-color:var(--accent);color:var(--accent);}
+  .btn-primary{background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);color:#fff;box-shadow:0 3px 10px rgba(26,86,219,0.3);}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(26,86,219,0.35);}
+  .toast{position:fixed;bottom:24px;right:24px;background:#1E293B;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.25);opacity:0;pointer-events:none;transform:translateY(8px);transition:all 0.25s;display:flex;align-items:center;gap:8px;z-index:999;max-width:360px;}
+  .toast.show{opacity:1;pointer-events:auto;transform:translateY(0);}
+  .toast.success{background:#15803D;}
+  .toast.error{background:var(--danger);}
+  .toast.info{background:var(--accent);}
+  hr.divider{border:none;border-top:1px solid var(--border);margin:14px 0;}
+  /* Modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;overflow:auto;}
+  .modal-box{background:#fff;max-width:660px;margin:40px auto;border-radius:12px;padding:24px;position:relative;}
+  @media(max-width:640px){
+    .form-grid{grid-template-columns:1fr;}
+    .form-grid.cols-3{grid-template-columns:1fr 1fr;}
+    .result-grid{grid-template-columns:1fr 1fr;}
+    .container{padding:16px 12px 60px;}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-icon">&#9889;</div>
+  <div><h1>Survey Input Dashboard &#8212; Power Bank Machine</h1><p>New Location Submission Form</p></div>
+</div>
+<div class="container">
+
+  <!-- Google Sheets Banner -->
+  <div class="gs-config">
+    <h3>&#129001; Integrasi Google Sheets</h3>
+    <p>Setelah save Word, data otomatis terkirim ke Google Sheet kamu. Masukkan <b>Apps Script Web App URL</b> di bawah.<br>
+    <a onclick="showScriptHelp()">&#128196; Lihat template Apps Script &#8599;</a></p>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <input type="text" id="gsScriptUrl" placeholder="https://script.google.com/macros/s/YOUR_ID/exec" style="flex:1;min-width:200px;padding:8px 12px;font-size:12px;" oninput="checkGsStatus()">
+      <button class="btn btn-secondary" style="padding:8px 14px;font-size:12px;" onclick="saveGsUrl()">&#128190; Simpan</button>
+      <span class="gs-status not-set" id="gsStatusBadge">&#9888; Belum diset</span>
+    </div>
+  </div>
+
+  <!-- Section 1 -->
+  <div class="section-card">
+    <div class="section-header"><div class="section-num">1</div><h2>Partner &amp; Location Information</h2></div>
+    <div class="section-body">
+      <div class="form-grid">
+        <div class="field-group"><label>Location Name <span class="req">*</span></label><input type="text" id="locationName" placeholder="Nama lokasi"></div>
+        <div class="field-group"><label>Survey Date <span class="req">*</span></label><input type="date" id="surveyDate"></div>
+        <div class="field-group full"><label>Location Address <span class="req">*</span></label><textarea id="locationAddress" placeholder="Alamat lengkap lokasi..." rows="2"></textarea></div>
+        <div class="field-group"><label>Location Traffic (Weekday)</label><input type="text" id="trafficWeekday" placeholder="mis. 20-40 pengunjung / hari"></div>
+        <div class="field-group"><label>Location Traffic (Weekend)</label><input type="text" id="trafficWeekend" placeholder="mis. 50-80 pengunjung / hari"></div>
+        <div class="field-group"><label>Peak Day &amp; Hours</label><input type="text" id="peakDay" placeholder="mis. Fri-Sun (13:00 - 20:00)"></div>
+        <div class="field-group"><label>Partnership Scheme</label><input type="text" id="partnerScheme" placeholder="Skema kerjasama"></div>
+      </div>
+      <hr class="divider">
+      <label style="display:block;margin-bottom:8px;">Location Category <span class="req">*</span></label>
+      <div class="category-grid" id="categoryGrid"></div>
+    </div>
+  </div>
+
+  <!-- Section 2 -->
+  <div class="section-card">
+    <div class="section-header"><div class="section-num">2</div><h2>Location Operating Hours</h2></div>
+    <div class="section-body">
+      <div class="form-grid cols-3">
+        <div class="field-group"><label>Days per Week</label><input type="text" id="daysPerWeek" placeholder="mis. 7 days / Week"></div>
+        <div class="field-group"><label>Start Time</label><input type="time" id="startTime" value="10:00"></div>
+        <div class="field-group"><label>End Time</label><input type="time" id="endTime" value="22:00"></div>
+      </div>
+      <div class="field-group" style="margin-top:14px;"><label>Operating Days</label><div class="days-row" id="daysRow"></div></div>
+    </div>
+  </div>
+
+  <!-- Section 3 -->
+  <div class="section-card">
+    <div class="section-header"><div class="section-num">3</div><h2>Contact PIC</h2></div>
+    <div class="section-body">
+      <div class="form-grid">
+        <div class="field-group"><label>Nama PIC</label><input type="text" id="picName" placeholder="Nama PIC / Staff"></div>
+        <div class="field-group"><label>Phone Number</label><input type="tel" id="picPhone" placeholder="+62xxx"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Machine Placement -->
+  <div class="section-card">
+    <div class="section-header"><div class="section-num">4</div><h2>Proposed Machine Placement</h2></div>
+    <div class="section-body">
+      <table class="machine-table">
+        <thead><tr><th style="width:120px;">Size</th><th style="width:80px;">Qty</th><th>Deployment Point</th><th style="width:40px;"></th></tr></thead>
+        <tbody id="machineTableBody"></tbody>
+      </table>
+      <button class="add-row-btn" onclick="addMachineRow()">+ Tambah Baris</button>
+      <hr class="divider">
+      <!-- FOTO UPLOAD -->
+      <label style="display:block;margin-bottom:8px;font-size:12px;font-weight:600;color:var(--text2);">&#128247; Foto Dokumentasi Penempatan Mesin</label>
+      <div class="photo-upload-area" id="photoDropArea" ondragover="handleDrag(event,true)" ondragleave="handleDrag(event,false)" ondrop="handleDrop(event)">
+        <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotoSelect(event)">
+        <div class="upload-icon">&#128247;</div>
+        <p>Klik atau <b>drag &amp; drop</b> foto ke sini</p>
+        <span>PNG, JPG, JPEG &mdash; bisa pilih banyak foto sekaligus</span>
+      </div>
+      <div class="photo-grid" id="photoGrid"></div>
+      <hr class="divider">
+      <div class="field-group">
+        <label>Notes on Machine Placement</label>
+        <textarea id="machineNotes" placeholder="Deskripsi titik penempatan, opsi lokasi, catatan izin dari pihak lokasi..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5 -->
+  <div class="section-card">
+    <div class="section-header"><div class="section-num">5</div><h2>Location Assessment</h2></div>
+    <div class="section-body">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px;">Klik badge <b>Met / Not Met / N/A</b> untuk mengubah status. Isi kolom Actual/Remarks sesuai kondisi lapangan.</p>
+      <table class="assess-table" id="assessTable">
+        <thead><tr><th>No</th><th>Criteria</th><th>Actual / Remarks</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 6 -->
+  <div class="section-card">
+    <div class="section-header"><div class="section-num">6</div><h2>Machine Placement Criteria</h2></div>
+    <div class="section-body">
+      <table class="assess-table" id="placementTable">
+        <thead><tr><th>No</th><th>Criteria</th><th>Remarks</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 7 -->
+  <div class="section-card">
+    <div class="section-header"><div class="section-num">7</div><h2>Survey Result</h2></div>
+    <div class="section-body">
+      <div class="form-grid cols-3" style="margin-bottom:16px;">
+        <div class="field-group"><label>Survey Start Time</label><input type="time" id="surveyStart"></div>
+        <div class="field-group"><label>Survey End Time</label><input type="time" id="surveyEnd"></div>
+        <div class="field-group">
+          <label>Surveyor Name <span class="req">*</span></label>
+          <input type="text" id="surveyorName" placeholder="Nama surveyor" oninput="updateSigPreview()">
+        </div>
+      </div>
+      <!-- Signature Preview -->
+      <div class="sig-preview" id="sigPreview">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;">&#9997;&#65039; Preview Tanda Tangan yang akan muncul di dokumen Word:</div>
+        <div class="sig-name-display" id="sigNameDisplay"></div>
+        <div class="sig-underline"></div>
+        <div class="sig-label" id="sigLabelDisplay"></div>
+      </div>
+      <div class="result-grid" id="resultCounters" style="margin:16px 0;">
+        <div class="result-card"><div class="val" id="p1Count">0</div><div class="lbl"># P1 Criteria Met</div></div>
+        <div class="result-card"><div class="val" id="p2Count">0</div><div class="lbl"># P2 Criteria Met</div></div>
+        <div class="result-card"><div class="val" id="totalMet">0</div><div class="lbl">Total Criteria Met</div></div>
+      </div>
+      <div class="field-group" style="margin-bottom:14px;">
+        <label>Result</label>
+        <div class="result-select" id="resultSelect">
+          <div class="result-opt approve" data-val="Approved" onclick="selectResult(this)">&#9989; Approved</div>
+          <div class="result-opt reject" data-val="Rejected" onclick="selectResult(this)">&#10060; Rejected</div>
+          <div class="result-opt on-hold" data-val="On Hold" onclick="selectResult(this)">&#9208; On Hold</div>
+        </div>
+      </div>
+      <div class="form-grid cols-1">
+        <div class="field-group"><label>Additional Remarks</label><textarea id="additionalRemarks" placeholder="Catatan tambahan dari surveyor..."></textarea></div>
+      </div>
+      <hr class="divider">
+      <div class="form-grid">
+        <div class="field-group"><label>Reviewed by (Sales Manager)</label><input type="text" id="reviewerName" placeholder="Nama Sales Manager"></div>
+        <div class="field-group"><label>Review Date</label><input type="date" id="reviewDate"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions-bar">
+    <button class="btn btn-secondary" onclick="resetForm()">&#128260; Reset Form</button>
+    <button class="btn btn-primary" onclick="exportToWord()">&#128196; Save as Word Document</button>
+  </div>
+</div>
+
+<!-- Script Help Modal -->
+<div class="modal-overlay" id="scriptModal">
+  <div class="modal-box">
+    <button onclick="document.getElementById('scriptModal').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;">&#10005;</button>
+    <h3 style="color:var(--accent);margin-bottom:10px;">&#128203; Google Apps Script Template</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">1. Buka Google Sheets kamu &#8594; <b>Extensions &#8594; Apps Script</b><br>2. Hapus kode lama, paste script ini<br>3. Klik <b>Deploy &#8594; New deployment &#8594; Web App</b><br>4. Set <b>Execute as: Me</b> &amp; <b>Who has access: Anyone</b><br>5. Copy URL-nya dan paste di field di atas</p>
+    <textarea id="scriptTemplate" readonly style="width:100%;height:300px;font-size:11px;font-family:monospace;background:#1E293B;color:#A3E635;padding:12px;border-radius:8px;border:none;resize:none;"></textarea>
+    <button class="btn btn-primary" style="margin-top:12px;" onclick="copyScript()">&#128203; Copy Script</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATEGORIES=["Airport","Apartment","Automotive Related Place","Bakery","Bakery inside Shopping Mall","Cafe inside Shopping Mall","Convenience store","Photo Studio inside Shopping Mall","Drugstore","Entertainment & Recreation","Event","Fashion Stores","Fitness Center","Food Court inside Shopping Mall","Coffee Shop & Cafe inside Shopping Mall","Hospital","Hotel","Karaoke/Bar","Logistic Stores","Other Building","Public Transport - Transjakarta","Public Transport - MRT","Public Transport - KCI","Residential","Restaurant","Restaurant inside Building","Reflexology","Restaurant inside Supermarket","Retail Stores","Shopping Mall","Small Business","Sport Center","Supermarket","Supermarket inside Office Building","Supermarket inside Shopping Mall","Tenant F&B inside Shopping Mall","University/School/Perpustakan Public"];
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const selectedCategories=new Set();
+const selectedDays=new Set(["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]);
+const ASSESS_CRITERIA=[
+  {no:"P1-1",label:"Location Operating Hours",desc:"Location opens min. 5 days / week",param:"Min 5 days/week"},
+  {no:"P2-1",label:"Foot Traffic",desc:"Minimum visitor density",param:"3 pengunjung / 60 Menit"},
+  {no:"P2-2",label:"Target Market - Occupation",desc:"Target market sesuai segmen",param:"Pekerja, Remaja, Mahasiswa, dll"},
+  {no:"P2-3",label:"Target Market - Purpose",desc:"Tujuan kunjungan relevan",param:"Isi tujuan kunjungan"},
+  {no:"P2-4",label:"Avg Visitor Duration",desc:"Durasi rata-rata kunjungan",param:"min. 1 jam"},
+  {no:"P2-5",label:"Availability Free Charging",desc:"Tidak ada free charging station",param:"No free charging available"},
+  {no:"P2-6",label:"Availability of Plug",desc:"Stop kontak tersedia",param:"Plug tersedia"},
+];
+const PLACEMENT_CRITERIA=[
+  {no:1,label:"Machine Visibility",desc:"Mesin terlihat jelas oleh pengunjung"},
+  {no:2,label:"Machine Safety",desc:"Mesin terpantau CCTV / dalam ruangan"},
+  {no:3,label:"Surrounding",desc:"Area sekitar mesin ramai pengunjung"},
+  {no:4,label:"Flow",desc:"Alur pengunjung mendukung penggunaan mesin"},
+];
+const assessState={};
+const placementState={};
+let resultVal="";
+let machineRowData=[];
+let uploadedPhotos=[];
+
+function init(){
+  const today=new Date().toISOString().split("T")[0];
+  document.getElementById("surveyDate").value=today;
+  const grid=document.getElementById("categoryGrid");
+  CATEGORIES.forEach(cat=>{
+    const item=document.createElement("label");
+    item.className="cat-item";
+    item.innerHTML='<input type="checkbox" value="'+cat+'"> '+cat;
+    const cb=item.querySelector("input");
+    item.addEventListener("click",e=>{
+      if(e.target.tagName!=="INPUT"){cb.checked=!cb.checked;}
+      cb.checked?selectedCategories.add(cat):selectedCategories.delete(cat);
+      item.classList.toggle("selected",cb.checked);
+    });
+    grid.appendChild(item);
+  });
+  const row=document.getElementById("daysRow");
+  DAYS.forEach(d=>{
+    const chip=document.createElement("div");
+    chip.className="day-chip active";chip.id="day-"+d;chip.textContent=d;
+    chip.onclick=()=>{selectedDays.has(d)?(selectedDays.delete(d),chip.classList.remove("active")):(selectedDays.add(d),chip.classList.add("active"));};
+    row.appendChild(chip);
+  });
+  addMachineRow();addMachineRow();addMachineRow();
+  buildAssessTable("assessTable",ASSESS_CRITERIA,assessState);
+  buildAssessTable("placementTable",PLACEMENT_CRITERIA,placementState);
+  updateCounters();
+  const saved=localStorage.getItem("gsScriptUrl")||"";
+  if(saved){document.getElementById("gsScriptUrl").value=saved;checkGsStatus();}
+  document.getElementById("scriptTemplate").value=getAppsScriptTemplate();
+}
+
+// Machine rows
+function addMachineRow(){
+  const id=Date.now()+Math.random();
+  machineRowData.push({id,size:"Small",qty:"",point:""});
+  renderMachineTable();
+}
+function deleteMachineRow(id){
+  machineRowData=machineRowData.filter(r=>r.id!==id);
+  renderMachineTable();
+}
+function renderMachineTable(){
+  const tbody=document.getElementById("machineTableBody");
+  tbody.innerHTML="";
+  machineRowData.forEach(r=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td>
+      <select class="size-select" onchange="updateMachineField(${r.id},'size',this.value)">
+        <option value="Large"${r.size==="Large"?" selected":""}>Large</option>
+        <option value="Medium"${r.size==="Medium"?" selected":""}>Medium</option>
+        <option value="Small"${r.size==="Small"?" selected":""}>Small</option>
+      </select></td>
+      <td><input type="number" min="0" value="${r.qty}" placeholder="0" style="width:70px;text-align:center;" onchange="updateMachineField(${r.id},'qty',this.value)"></td>
+      <td><input type="text" value="${r.point}" placeholder="Deployment point..." onchange="updateMachineField(${r.id},'point',this.value)"></td>
+      <td><button class="del-row-btn" onclick="deleteMachineRow(${r.id})" title="Hapus">&#10005;</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function updateMachineField(id,field,val){const r=machineRowData.find(x=>x.id===id);if(r)r[field]=val;}
+
+// Photos
+function handleDrag(e,over){e.preventDefault();document.getElementById("photoDropArea").classList.toggle("drag-over",over);}
+function handleDrop(e){e.preventDefault();document.getElementById("photoDropArea").classList.remove("drag-over");processFiles(Array.from(e.dataTransfer.files));}
+function handlePhotoSelect(e){processFiles(Array.from(e.target.files));e.target.value="";}
+function processFiles(files){
+  files.filter(f=>f.type.startsWith("image/")).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      uploadedPhotos.push({id:Date.now()+Math.random(),dataUrl:ev.target.result,caption:"",file});
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function renderPhotoGrid(){
+  const grid=document.getElementById("photoGrid");grid.innerHTML="";
+  uploadedPhotos.forEach(p=>{
+    const item=document.createElement("div");item.className="photo-item";
+    item.innerHTML=`<img src="${p.dataUrl}" alt="foto"><button class="photo-del" onclick="deletePhoto(${p.id})">&#10005;</button><div class="photo-caption"><input type="text" placeholder="Caption foto..." value="${p.caption}" oninput="updatePhotoCaption(${p.id},this.value)"></div>`;
+    grid.appendChild(item);
+  });
+}
+function deletePhoto(id){uploadedPhotos=uploadedPhotos.filter(p=>p.id!==id);renderPhotoGrid();}
+function updatePhotoCaption(id,val){const p=uploadedPhotos.find(x=>x.id===id);if(p)p.caption=val;}
+
+// Assessment
+function buildAssessTable(tableId,criteria,state){
+  const tbody=document.querySelector("#"+tableId+" tbody");
+  criteria.forEach(c=>{
+    state[c.no]={status:"na",actual:""};
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td style="font-weight:700;color:var(--accent);width:50px;">${c.no}</td>
+      <td><div style="font-weight:600;">${c.label}</div><div class="criteria-desc">${c.desc}</div>${c.param?'<div style="font-size:11px;color:var(--text3);margin-top:2px;">'+c.param+'</div>':""}</td>
+      <td><input type="text" placeholder="Actual / Remarks..." style="width:100%;"></td>
+      <td style="white-space:nowrap;"><span class="status-badge na" id="badge-${tableId}-${c.no}">&#8212; N/A</span></td>`;
+    tr.querySelector("input").addEventListener("input",function(){state[c.no].actual=this.value;updateCounters();});
+    tr.querySelector(".status-badge").addEventListener("click",function(){cycleStatus(tableId,c.no,state);});
+    tbody.appendChild(tr);
+  });
+}
+function cycleStatus(tableId,no,state){
+  const order=["na","met","not-met"];
+  const next=order[(order.indexOf(state[no].status)+1)%order.length];
+  state[no].status=next;
+  const badge=document.getElementById("badge-"+tableId+"-"+no);
+  badge.className="status-badge "+next;
+  badge.textContent=next==="met"?"&#10003; Met":next==="not-met"?"&#10007; Not Met":"&#8212; N/A";
+  badge.innerHTML=next==="met"?"&#10003; Met":next==="not-met"?"&#10007; Not Met":"&#8212; N/A";
+  updateCounters();
+}
+function updateCounters(){
+  let p1=0,p2=0;
+  Object.entries(assessState).forEach(([k,v])=>{if(v.status==="met"){k.startsWith("P1")?p1++:p2++;}});
+  Object.entries(placementState).forEach(([,v])=>{if(v.status==="met")p2++;});
+  document.getElementById("p1Count").textContent=p1;
+  document.getElementById("p2Count").textContent=p2;
+  document.getElementById("totalMet").textContent=p1+p2;
+}
+
+// Signature preview
+function updateSigPreview(){
+  const name=document.getElementById("surveyorName").value.trim();
+  const preview=document.getElementById("sigPreview");
+  if(name){
+    preview.classList.add("visible");
+    document.getElementById("sigNameDisplay").textContent=name;
+    const date=document.getElementById("surveyDate").value;
+    document.getElementById("sigLabelDisplay").textContent="Surveyor | "+date;
+  } else {
+    preview.classList.remove("visible");
+  }
+}
+
+function selectResult(el){document.querySelectorAll(".result-opt").forEach(o=>o.classList.remove("selected"));el.classList.add("selected");resultVal=el.dataset.val;}
+function resetForm(){if(!confirm("Reset semua isi form?"))return;location.reload();}
+function showToast(msg,type,dur){
+  dur=dur||3500;const t=document.getElementById("toast");t.innerHTML=msg;t.className="toast show "+(type||"");
+  setTimeout(()=>t.classList.remove("show"),dur);
+}
+
+// Google Sheets
+function saveGsUrl(){
+  const url=document.getElementById("gsScriptUrl").value.trim();
+  localStorage.setItem("gsScriptUrl",url);checkGsStatus();
+  showToast(url?"&#10003; Script URL disimpan!":"&#9888; URL dikosongkan",url?"success":"");
+}
+function checkGsStatus(){
+  const url=document.getElementById("gsScriptUrl").value.trim();
+  const badge=document.getElementById("gsStatusBadge");
+  if(url&&url.startsWith("https://script.google.com")){badge.className="gs-status connected";badge.innerHTML="&#10003; Terhubung";}
+  else{badge.className="gs-status not-set";badge.innerHTML="&#9888; Belum diset";}
+}
+async function sendToGoogleSheets(data){
+  const url=localStorage.getItem("gsScriptUrl");
+  if(!url||!url.startsWith("https://script.google.com")){showToast("&#9888; Google Sheets URL belum diset","");return false;}
+  try{
+    showToast("&#128202; Menyimpan ke Google Sheets...","info",4000);
+    await fetch(url,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+    showToast("&#10003; Data berhasil masuk ke Google Sheets!","success");return true;
+  }catch(e){showToast("&#9888; Gagal ke Google Sheets: "+e.message,"error");return false;}
+}
+function showScriptHelp(){document.getElementById("scriptModal").style.display="block";}
+function copyScript(){const t=document.getElementById("scriptTemplate");t.select();document.execCommand("copy");showToast("&#128203; Script berhasil dicopy!","success");}
+function getAppsScriptTemplate(){
+  return `// Google Apps Script - Survey Power Bank Machine
+// Deploy as Web App: Execute as Me, Anyone can access
+
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Survey Data") || ss.insertSheet("Survey Data");
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow([
+        "Timestamp","Location Name","Survey Date","Address","Category",
+        "Traffic Weekday","Traffic Weekend","Peak Hours","Partnership",
+        "Days/Week","Start Time","End Time","Operating Days",
+        "PIC Name","PIC Phone","Machine Summary",
+        "P1 Met","P2 Met","Total Met","Result",
+        "Surveyor","Reviewer","Remarks"
+      ]);
+    }
+    sheet.appendRow([
+      new Date().toLocaleString("id-ID"),
+      data.locationName, data.surveyDate, data.locationAddress,
+      data.category, data.trafficWeekday, data.trafficWeekend,
+      data.peakDay, data.partnerScheme, data.daysPerWeek,
+      data.startTime, data.endTime, data.operatingDays,
+      data.picName, data.picPhone, data.machineSummary,
+      data.p1Met, data.p2Met, data.totalMet, data.result,
+      data.surveyorName, data.reviewerName, data.additionalRemarks
+    ]);
+    return ContentService.createTextOutput(
+      JSON.stringify({status:"ok"})
+    ).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(
+      JSON.stringify({status:"error",message:err.toString()})
+    ).setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+}
+
+// =====================
+// WORD EXPORT
+// =====================
+async function exportToWord(){
+  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,
+         AlignmentType,WidthType,ShadingType,BorderStyle,ImageRun,VerticalAlign}=docx;
+
+  const v=id=>document.getElementById(id).value||"";
+  const locName=v("locationName")||"[Location Name]";
+  const surveyDate=v("surveyDate");const locAddr=v("locationAddress");
+  const trafficWD=v("trafficWeekday");const trafficWE=v("trafficWeekend");
+  const peakDay=v("peakDay");const partnerScheme=v("partnerScheme");
+  const daysPerWeek=v("daysPerWeek");const startTime=v("startTime");const endTime=v("endTime");
+  const picName=v("picName");const picPhone=v("picPhone");const machineNotes=v("machineNotes");
+  const surveyStart=v("surveyStart");const surveyEnd=v("surveyEnd");
+  const surveyorName=v("surveyorName");const reviewerName=v("reviewerName");
+  const reviewDate=v("reviewDate");const remarks=v("additionalRemarks");
+  const catList=[...selectedCategories].join(", ")||"-";
+  const daysList=DAYS.filter(d=>selectedDays.has(d)).join(", ")||"-";
+  const p1c=document.getElementById("p1Count").textContent;
+  const p2c=document.getElementById("p2Count").textContent;
+  const totalc=document.getElementById("totalMet").textContent;
+
+  const tb={style:BorderStyle.SINGLE,size:4,color:"AAAAAA"};
+  const tbs={top:tb,bottom:tb,left:tb,right:tb};
+  const nb={style:BorderStyle.NONE,size:0,color:"FFFFFF"};
+  const nbs={top:nb,bottom:nb,left:nb,right:nb};
+  const hShade={fill:"1A56DB",type:ShadingType.CLEAR};
+  const aShade={fill:"EBF0FF",type:ShadingType.CLEAR};
+  const cm={top:80,bottom:80,left:120,right:120};
+  const W=9360;const C2=[3000,6360];const C4=[600,2800,3960,1000];const C4P=[600,2400,4360,1000];
+
+  const p=(text,opts)=>new Paragraph({children:[new TextRun({text:String(text||""),...(opts||{})})],spacing:{after:80}});
+  const hC=(text,w)=>new TableCell({width:{size:w,type:WidthType.DXA},shading:hShade,margins:cm,borders:tbs,verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({children:[new TextRun({text,bold:true,color:"FFFFFF",size:20})]})]});
+  const dC=(text,w,extra)=>new TableCell({width:{size:w,type:WidthType.DXA},margins:cm,borders:tbs,children:[new Paragraph({children:[new TextRun({text:String(text||""),size:20})]})], ...(extra||{})});
+  const aC=(text,w)=>new TableCell({width:{size:w,type:WidthType.DXA},shading:aShade,margins:cm,borders:tbs,children:[new Paragraph({children:[new TextRun({text,size:20,bold:true})]})]});
+  const sT=(n,t)=>new Paragraph({children:[new TextRun({text:n+". "+t,bold:true,size:24,color:"1A56DB"})],spacing:{before:200,after:120},border:{bottom:{style:BorderStyle.SINGLE,size:6,color:"1A56DB",space:1}}});
+
+  // Machine body
+  const mRows=[];
+  [...document.querySelectorAll("#machineTableBody tr")].forEach(tr=>{
+    const sel=tr.querySelector("select");
+    const inps=tr.querySelectorAll("input");
+    const size=sel?sel.value:"-";const qty=inps[0]?inps[0].value:"";const point=inps[1]?inps[1].value:"";
+    if(qty||point)mRows.push(new TableRow({children:[dC(size,1500),dC(qty,900),dC(point,6960)]}));
+  });
+  if(!mRows.length)mRows.push(new TableRow({children:[dC("-",1500),dC("-",900),dC("-",6960)]}));
+
+  // Assess rows
+  const aRows=[...document.querySelectorAll("#assessTable tbody tr")].map((tr,i)=>{
+    const c=ASSESS_CRITERIA[i];const st=assessState[c.no];
+    const av=tr.querySelector("input[type='text']")?.value||"";
+    const sv=st?.status==="met"?"Met":st?.status==="not-met"?"Not Met":"N/A";
+    return new TableRow({children:[dC(c.no,C4[0]),dC(c.label+": "+c.desc,C4[1]),dC(av,C4[2]),dC(sv,C4[3])]});
+  });
+  const pRows=[...document.querySelectorAll("#placementTable tbody tr")].map((tr,i)=>{
+    const c=PLACEMENT_CRITERIA[i];const st=placementState[c.no];
+    const av=tr.querySelector("input[type='text']")?.value||"";
+    const sv=st?.status==="met"?"Met":st?.status==="not-met"?"Not Met":"N/A";
+    return new TableRow({children:[dC(String(c.no),C4P[0]),dC(c.label+": "+c.desc,C4P[1]),dC(av,C4P[2]),dC(sv,C4P[3])]});
+  });
+
+  // Photos
+  const photoChildren=[];
+  if(uploadedPhotos.length>0){
+    photoChildren.push(p(""));
+    photoChildren.push(sT("H","Survey Documentation"));
+    for(const ph of uploadedPhotos){
+      try{
+        const b64=ph.dataUrl.split(",")[1];
+        const mime=ph.dataUrl.match(/data:([^;]+);/)?.[1]||"image/jpeg";
+        const itype=mime.includes("png")?"png":mime.includes("gif")?"gif":"jpg";
+        const bc=atob(b64);const ba=new Uint8Array(bc.length);
+        for(let i=0;i<bc.length;i++)ba[i]=bc.charCodeAt(i);
+        photoChildren.push(new Paragraph({children:[new ImageRun({data:ba.buffer,transformation:{width:300,height:220},type:itype})]}));
+        if(ph.caption)photoChildren.push(p("Foto: "+ph.caption,{size:18,italics:true,color:"666666"}));
+        photoChildren.push(p(""));
+      }catch(e){console.warn("Skip photo",e);}
+    }
+  }
+
+  // Signature — auto for Mahendra
+  const isMahendra=surveyorName.trim().toLowerCase()==="mahendra";
+  const sigCell=new TableCell({
+    width:{size:4580,type:WidthType.DXA},shading:{fill:"EBF0FF",type:ShadingType.CLEAR},margins:cm,borders:tbs,
+    children:[
+      new Paragraph({children:[new TextRun({text:"Submitted by:",bold:true,size:20})],spacing:{after:isMahendra?80:280}}),
+      ...(isMahendra?[
+        new Paragraph({children:[new TextRun({text:surveyorName,bold:true,size:36,font:"Times New Roman",italics:true,color:"1A3A7A"})],spacing:{after:60}}),
+        new Paragraph({children:[new TextRun({text:"_________________________",size:18,color:"333333"})],spacing:{after:60}}),
+      ]:[
+        new Paragraph({children:[new TextRun({text:" ",size:20})],spacing:{after:260}}),
+        new Paragraph({children:[new TextRun({text:"_________________________",size:20})],spacing:{after:60}}),
+      ]),
+      new Paragraph({children:[new TextRun({text:"Name: "+surveyorName,size:20})],spacing:{after:40}}),
+      new Paragraph({children:[new TextRun({text:"Date: "+surveyDate,size:20})],spacing:{after:40}}),
+    ]
+  });
+  const spc=w=>new TableCell({width:{size:w,type:WidthType.DXA},borders:nbs,children:[p("")]});
+  const revCell=new TableCell({
+    width:{size:4380,type:WidthType.DXA},shading:{fill:"EBF0FF",type:ShadingType.CLEAR},margins:cm,borders:tbs,
+    children:[
+      new Paragraph({children:[new TextRun({text:"Reviewed by:",bold:true,size:20})],spacing:{after:280}}),
+      new Paragraph({children:[new TextRun({text:"_________________________",size:20})],spacing:{after:60}}),
+      new Paragraph({children:[new TextRun({text:"Sales Manager: "+reviewerName,size:20})],spacing:{after:40}}),
+      new Paragraph({children:[new TextRun({text:"Date: "+reviewDate,size:20})],spacing:{after:40}}),
+    ]
+  });
+
+  const resultColor=resultVal==="Approved"?"166534":resultVal==="Rejected"?"991B1B":"92400E";
+
+  const doc=new Document({
+    styles:{default:{document:{run:{font:"Calibri",size:22}}}},
+    sections:[{
+      properties:{page:{size:{width:11906,height:16838},margin:{top:1134,right:1134,bottom:1134,left:1134}}},
+      children:[
+        new Paragraph({children:[new TextRun({text:"LOCATION SURVEY DOCUMENT : POWER BANK MACHINE",bold:true,size:32,color:"1A56DB"})],alignment:AlignmentType.CENTER,spacing:{after:300},border:{bottom:{style:BorderStyle.SINGLE,size:8,color:"1A56DB",space:2}}}),
+        sT("A","Partner & Location Information"),
+        new Table({width:{size:W,type:WidthType.DXA},columnWidths:C2,rows:[
+          new TableRow({children:[aC("Location Name",C2[0]),dC(locName,C2[1])]}),
+          new TableRow({children:[aC("Location Address",C2[0]),dC(locAddr,C2[1])]}),
+          new TableRow({children:[aC("Location Category",C2[0]),dC(catList,C2[1])]}),
+          new TableRow({children:[aC("Location Traffic",C2[0]),dC("Weekday: "+trafficWD+"\nWeekend: "+trafficWE,C2[1])]}),
+          new TableRow({children:[aC("Peak Day & Hours",C2[0]),dC(peakDay,C2[1])]}),
+          new TableRow({children:[aC("Partnership Scheme",C2[0]),dC(partnerScheme,C2[1])]}),
+        ]}),
+        p(""),sT("B","Location Operating Hours"),
+        new Table({width:{size:W,type:WidthType.DXA},columnWidths:C2,rows:[
+          new TableRow({children:[aC("# of Days per Week",C2[0]),dC(daysPerWeek,C2[1])]}),
+          new TableRow({children:[aC("Operating Days",C2[0]),dC(daysList,C2[1])]}),
+          new TableRow({children:[aC("Start Time",C2[0]),dC(startTime,C2[1])]}),
+          new TableRow({children:[aC("End Time",C2[0]),dC(endTime,C2[1])]}),
+        ]}),
+        p(""),sT("C","Contact PIC"),
+        new Table({width:{size:W,type:WidthType.DXA},columnWidths:C2,rows:[
+          new TableRow({children:[aC("Name",C2[0]),dC(picName,C2[1])]}),
+          new TableRow({children:[aC("Phone Number",C2[0]),dC(picPhone,C2[1])]}),
+        ]}),
+        p(""),sT("D","Proposed Machine Placement"),
+        new Table({width:{size:W,type:WidthType.DXA},columnWidths:[1500,900,6960],rows:[
+          new TableRow({children:[hC("Size",1500),hC("Qty",900),hC("Deployment Point",6960)]}),
+          ...mRows
+        ]}),
+        p(""),
+        new Table({width:{size:W,type:WidthType.DXA},columnWidths:[W],rows:[
+          new TableRow({children:[hC("Machine Placement Notes",W)]}),
+          new TableRow({children:[dC(machineNotes,W)]}),
+        ]}),
+        p(""),sT("E","Location Assessment"),
+        new Table({width:{size:W,type:WidthType.DXA},columnWidths:C4,rows:[
+          new TableRow({children:[hC("No",C4[0]),hC("Criteria",C4[1]),hC("Actual / Remarks",C4[2]),hC("Status",C4[3])]}),
+          ...aRows
+        ]}),
+        p(""),sT("F","Machine Placement Criteria"),
+        new Table({width:{size:W,type:WidthType.DXA},columnWidths:C4P,rows:[
+          new TableRow({children:[hC("No",C4P[0]),hC("Criteria",C4P[1]),hC("Remarks",C4P[2]),hC("Status",C4P[3])]}),
+          ...pRows
+        ]}),
+        ...photoChildren,
+        p(""),sT("G","Survey Result"),
+        new Table({width:{size:W,type:WidthType.DXA},columnWidths:C2,rows:[
+          new TableRow({children:[aC("Survey Date",C2[0]),dC(surveyDate,C2[1])]}),
+          new TableRow({children:[aC("Survey Time",C2[0]),dC(surveyStart+" - "+surveyEnd,C2[1])]}),
+          new TableRow({children:[aC("# P1 Criteria Met",C2[0]),dC(p1c,C2[1])]}),
+          new TableRow({children:[aC("# P2 Criteria Met",C2[0]),dC(p2c,C2[1])]}),
+          new TableRow({children:[aC("Total Criteria Met",C2[0]),dC(totalc,C2[1])]}),
+          new TableRow({children:[aC("Result",C2[0]),new TableCell({width:{size:C2[1],type:WidthType.DXA},margins:cm,borders:tbs,children:[new Paragraph({children:[new TextRun({text:resultVal||"-",bold:true,size:22,color:resultColor})]})]})] }),
+          new TableRow({children:[aC("Additional Remarks",C2[0]),dC(remarks,C2[1])]}),
+        ]}),
+        p(""),p(""),
+        new Table({width:{size:W,type:WidthType.DXA},columnWidths:[200,4580,200,4380],rows:[
+          new TableRow({children:[spc(200),sigCell,spc(200),revCell]})
+        ]}),
+      ]
+    }]
+  });
+
+  try{
+    const buffer=await Packer.toBuffer(doc);
+    const blob=new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    const fname=locName.replace(/\s+/g,"_").replace(/[^a-zA-Z0-9_]/g,"")||"Survey";
+    a.href=url;a.download="Survey_"+fname+"_"+(surveyDate||"draft")+".docx";a.click();URL.revokeObjectURL(url);
+    showToast("&#10003; Word document berhasil diunduh!","success");
+    const sheetData={
+      locationName:locName,surveyDate,locationAddress:locAddr,category:catList,
+      trafficWeekday:trafficWD,trafficWeekend:trafficWE,peakDay,partnerScheme,
+      daysPerWeek,startTime,endTime,operatingDays:daysList,picName,picPhone,
+      machineSummary:machineRowData.filter(r=>r.qty).map(r=>r.size+"("+r.qty+"): "+r.point).join("; "),
+      p1Met:p1c,p2Met:p2c,totalMet:totalc,result:resultVal,
+      surveyorName,reviewerName,additionalRemarks:remarks
+    };
+    setTimeout(()=>sendToGoogleSheets(sheetData),1500);
+  }catch(e){console.error(e);showToast("&#10060; Gagal export: "+e.message,"error");}
+}
+
+init();
+</script>
+</body>
+</html>
